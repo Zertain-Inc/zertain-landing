@@ -1,27 +1,143 @@
 "use client";
-
-import { Sparkles, Zap, Rocket, ArrowRight, CheckCircle, Users, Award, TrendingUp } from "lucide-react";
+// @ts-ignore
+import { Sparkles, Zap, Rocket, ArrowRight, CheckCircle, Users, Award, TrendingUp, AlertCircle } from "lucide-react";
 import { useState } from "react";
 
+interface FormData {
+  name: string;
+  email: string;
+  phone: string;
+  message: string;
+}
+
+interface FormErrors {
+  name?: string;
+  email?: string;
+  phone?: string;
+  message?: string;
+}
+
 const HeroSection = () => {
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<FormData>({
     name: '',
     email: '',
     phone: '',
     message: ''
   });
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    setFormData(prev => ({
-      ...prev,
-      [e.target.name]: e.target.value
-    }));
+  const [formErrors, setFormErrors] = useState<FormErrors>({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitStatus, setSubmitStatus] = useState<{
+    type: 'success' | 'error' | null;
+    message: string;
+  }>({ type: null, message: '' });
+
+  // Client-side validation
+  const validateForm = (): boolean => {
+    const errors: FormErrors = {};
+    
+    if (!formData.name.trim() || formData.name.trim().length < 2) {
+      errors.name = 'Name must be at least 2 characters';
+    }
+    
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!formData.email || !emailRegex.test(formData.email)) {
+      errors.email = 'Please enter a valid email address';
+    }
+    
+    if (formData.phone) {
+      const phoneRegex = /^[\d\s+()-]+$/;
+      if (!phoneRegex.test(formData.phone)) {
+        errors.phone = 'Please enter a valid phone number';
+      }
+    }
+    
+    if (formData.message && formData.message.length > 500) {
+      errors.message = `Message too long (${formData.message.length}/500 characters)`;
+    }
+
+    setFormErrors(errors);
+    return Object.keys(errors).length === 0;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+
+    // Clear error for this field when user starts typing
+    if (formErrors[name as keyof FormErrors]) {
+      setFormErrors(prev => ({
+        ...prev,
+        [name]: undefined
+      }));
+    }
+
+    // Clear general submit status when user starts typing
+    if (submitStatus.type) {
+      setSubmitStatus({ type: null, message: '' });
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Handle form submission
-    console.log('Form submitted:', formData);
+    
+    // Validate form
+    if (!validateForm()) {
+      return;
+    }
+
+    setIsSubmitting(true);
+    setSubmitStatus({ type: null, message: '' });
+
+    try {
+      const response = await fetch('/api/hubspot', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData)
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        setSubmitStatus({
+          type: 'success',
+          message: data.message || 'Thank you! We\'ll contact you soon.'
+        });
+        
+        // Clear form on success
+        setFormData({
+          name: '',
+          email: '',
+          phone: '',
+          message: ''
+        });
+        setFormErrors({});
+      } else {
+        // Handle validation errors from server
+        if (data.errors) {
+          setFormErrors(data.errors);
+        }
+        
+        setSubmitStatus({
+          type: 'error',
+          message: data.message || 'Something went wrong. Please try again.'
+        });
+      }
+    } catch (error) {
+      console.error('Submission error:', error);
+      setSubmitStatus({
+        type: 'error',
+        message: 'Network error. Please check your connection and try again.'
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -108,22 +224,6 @@ const HeroSection = () => {
                   </div>
                 </div>
               </div>
-
-              {/* Stats */}
-              <div className="flex items-center space-x-8 pt-4">
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-white">500+</div>
-                  <div className="text-sm text-purple-200">Projects Delivered</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-white">98%</div>
-                  <div className="text-sm text-purple-200">Client Satisfaction</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-white">24/7</div>
-                  <div className="text-sm text-purple-200">Support Available</div>
-                </div>
-              </div>
             </div>
 
             {/* Right Column: Contact Form */}
@@ -143,54 +243,118 @@ const HeroSection = () => {
                   </p>
                 </div>
 
-                <form onSubmit={handleSubmit} className="space-y-4">
+                {/* Status Messages */}
+                {submitStatus.type && (
+                  <div className={`mb-4 p-4 rounded-xl flex items-start space-x-2 ${
+                    submitStatus.type === 'success' 
+                      ? 'bg-green-500/20 text-green-100 border border-green-400/30' 
+                      : 'bg-red-500/20 text-red-100 border border-red-400/30'
+                  }`}>
+                    {submitStatus.type === 'success' ? (
+                      <CheckCircle className="h-5 w-5 mt-0.5 flex-shrink-0" />
+                    ) : (
+                      <AlertCircle className="h-5 w-5 mt-0.5 flex-shrink-0" />
+                    )}
+                    <p className="text-sm font-medium">{submitStatus.message}</p>
+                  </div>
+                )}
+
+                <form onSubmit={handleSubmit} className="space-y-4" noValidate>
                   <div>
                     <input
                       type="text"
                       name="name"
-                      placeholder="Your Name"
+                      placeholder="Your Name *"
                       value={formData.name}
                       onChange={handleInputChange}
-                      className="w-full bg-white/10 backdrop-blur-sm border border-white/20 rounded-xl px-4 py-3 text-white placeholder-purple-200 focus:ring-2 focus:ring-purple-400 focus:border-transparent transition-all duration-200"
-                      required
+                      className={`w-full bg-white/10 backdrop-blur-sm border rounded-xl px-4 py-3 text-white placeholder-purple-200 focus:ring-2 focus:ring-purple-400 focus:border-transparent transition-all duration-200 ${
+                        formErrors.name ? 'border-red-400/50' : 'border-white/20'
+                      }`}
+                      disabled={isSubmitting}
                     />
+                    {formErrors.name && (
+                      <p className="mt-1 text-xs text-red-300">{formErrors.name}</p>
+                    )}
                   </div>
                   
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <input
-                      type="email"
-                      name="email"
-                      placeholder="Email Address"
-                      value={formData.email}
-                      onChange={handleInputChange}
-                      className="w-full bg-white/10 backdrop-blur-sm border border-white/20 rounded-xl px-4 py-3 text-white placeholder-purple-200 focus:ring-2 focus:ring-purple-400 focus:border-transparent transition-all duration-200"
-                      required
-                    />
-                    <input
-                      type="tel"
-                      name="phone"
-                      placeholder="Phone Number"
-                      value={formData.phone}
-                      onChange={handleInputChange}
-                      className="w-full bg-white/10 backdrop-blur-sm border border-white/20 rounded-xl px-4 py-3 text-white placeholder-purple-200 focus:ring-2 focus:ring-purple-400 focus:border-transparent transition-all duration-200"
-                    />
+                    <div>
+                      <input
+                        type="email"
+                        name="email"
+                        placeholder="Email Address *"
+                        value={formData.email}
+                        onChange={handleInputChange}
+                        className={`w-full bg-white/10 backdrop-blur-sm border rounded-xl px-4 py-3 text-white placeholder-purple-200 focus:ring-2 focus:ring-purple-400 focus:border-transparent transition-all duration-200 ${
+                          formErrors.email ? 'border-red-400/50' : 'border-white/20'
+                        }`}
+                        disabled={isSubmitting}
+                      />
+                      {formErrors.email && (
+                        <p className="mt-1 text-xs text-red-300">{formErrors.email}</p>
+                      )}
+                    </div>
+                    
+                    <div>
+                      <input
+                        type="tel"
+                        name="phone"
+                        placeholder="Phone Number"
+                        value={formData.phone}
+                        onChange={handleInputChange}
+                        className={`w-full bg-white/10 backdrop-blur-sm border rounded-xl px-4 py-3 text-white placeholder-purple-200 focus:ring-2 focus:ring-purple-400 focus:border-transparent transition-all duration-200 ${
+                          formErrors.phone ? 'border-red-400/50' : 'border-white/20'
+                        }`}
+                        disabled={isSubmitting}
+                      />
+                      {formErrors.phone && (
+                        <p className="mt-1 text-xs text-red-300">{formErrors.phone}</p>
+                      )}
+                    </div>
                   </div>
 
-                  <textarea
-                    name="message"
-                    placeholder="Tell us about your project..."
-                    value={formData.message}
-                    onChange={handleInputChange}
-                    rows={4}
-                    className="w-full bg-white/10 backdrop-blur-sm border border-white/20 rounded-xl px-4 py-3 text-white placeholder-purple-200 focus:ring-2 focus:ring-purple-400 focus:border-transparent transition-all duration-200 resize-none"
-                  />
+                  <div>
+                    <textarea
+                      name="message"
+                      placeholder="Tell us about your project..."
+                      value={formData.message}
+                      onChange={handleInputChange}
+                      rows={4}
+                      className={`w-full bg-white/10 backdrop-blur-sm border rounded-xl px-4 py-3 text-white placeholder-purple-200 focus:ring-2 focus:ring-purple-400 focus:border-transparent transition-all duration-200 resize-none ${
+                        formErrors.message ? 'border-red-400/50' : 'border-white/20'
+                      }`}
+                      disabled={isSubmitting}
+                    />
+                    {formErrors.message && (
+                      <p className="mt-1 text-xs text-red-300">{formErrors.message}</p>
+                    )}
+                    {formData.message && (
+                      <p className="mt-1 text-xs text-purple-200 text-right">
+                        {formData.message.length}/500 characters
+                      </p>
+                    )}
+                  </div>
 
                   <button
                     type="submit"
-                    className="w-full bg-gradient-to-r from-purple-500 to-pink-500 text-white py-3 px-6 rounded-xl font-semibold transition-all duration-200 hover:from-purple-600 hover:to-pink-600 hover:shadow-lg hover:shadow-purple-500/25 flex items-center justify-center space-x-2"
+                    disabled={isSubmitting}
+                    className={`w-full bg-gradient-to-r from-purple-500 to-pink-500 text-white py-3 px-6 rounded-xl font-semibold transition-all duration-200 flex items-center justify-center space-x-2 ${
+                      isSubmitting 
+                        ? 'opacity-70 cursor-not-allowed' 
+                        : 'hover:from-purple-600 hover:to-pink-600 hover:shadow-lg hover:shadow-purple-500/25'
+                    }`}
                   >
-                    <span>Start Your Project</span>
-                    <ArrowRight className="h-4 w-4" />
+                    {isSubmitting ? (
+                      <>
+                        <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                        <span>Submitting...</span>
+                      </>
+                    ) : (
+                      <>
+                        <span>Start Your Project</span>
+                        <ArrowRight className="h-4 w-4" />
+                      </>
+                    )}
                   </button>
                 </form>
 

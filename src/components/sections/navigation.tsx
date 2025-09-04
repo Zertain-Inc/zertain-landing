@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+// @ts-ignore
 import { ChevronDown, Menu, X } from 'lucide-react';
 import { useState } from 'react';
 
@@ -12,18 +13,10 @@ const Navigation = () => {
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between py-4">
           {/* Logo */}
-          <Link href="/" className="flex items-center space-x-2">
-            <div className="w-10 h-10 bg-gradient-to-r from-purple-400 to-pink-400 rounded-xl flex items-center justify-center">
-              <span className="text-white font-bold text-lg">Z</span>
-            </div>
-            <div className="flex flex-col">
-              <span className="text-white font-bold text-xl">Zertain</span>
-              <span className="text-purple-200 text-xs">automate • integrate • manage</span>
-            </div>
-          </Link>
+           <img src="/headerlogo.png" alt="logo"></img>
 
           {/* Desktop Navigation */}
-          <nav className="hidden md:flex items-center space-x-8">
+          {/* <nav className="hidden md:flex items-center space-x-8">
             <Link href="#about" className="text-white/90 hover:text-white transition-colors duration-200 text-sm font-medium">
               About Us
             </Link>
@@ -45,12 +38,12 @@ const Navigation = () => {
             <Link href="#faq" className="text-white/90 hover:text-white transition-colors duration-200 text-sm font-medium">
               FAQ
             </Link>
-          </nav>
+          </nav> */}
 
           {/* CTA Button */}
           <div className="hidden md:flex items-center space-x-4">
-            <button className="bg-white/10 backdrop-blur-sm text-white px-6 py-2 rounded-full text-sm font-medium hover:bg-white/20 transition-all duration-200 border border-white/20">
-              Get Started
+            <button onClick={() => window.open('https://zertain.com', '_blank')} className="bg-white/10 backdrop-blur-sm text-white px-6 py-2 rounded-full text-sm font-medium hover:bg-white/20 transition-all duration-200 border border-white/20">
+              Visit Zertain
             </button>
           </div>
 

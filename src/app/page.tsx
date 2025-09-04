@@ -12,8 +12,7 @@ export default function HomePage() {
       <main className="relative">
         <HeroSection />
         <FeaturesSection />
-        <StatisticsSection />
-        <TestimonialsSection />
+        {/* <StatisticsSection />        */}
       </main>
       <Footer />
     </div>

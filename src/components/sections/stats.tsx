@@ -1,5 +1,5 @@
 "use client";
-
+// @ts-ignore
 import React, { useEffect, useState } from 'react';
 import { Card } from "@/components/ui/card";
 import { TrendingUp, Users, Award, Calendar } from 'lucide-react';

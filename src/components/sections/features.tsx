@@ -1,5 +1,5 @@
 "use client";
-
+// @ts-ignore
 import { Brain, Globe, Smartphone, BarChart3, Cloud, Users } from "lucide-react";
 
 export const FeaturesSection = () => {

@@ -1,9 +1,9 @@
 "use client";
-
+// @ts-ignore
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-// @ts-ignore
+
 import { 
   Mail, 
   Phone, 

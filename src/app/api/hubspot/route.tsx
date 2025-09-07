@@ -56,7 +56,7 @@ export async function POST(request: NextRequest) {
     }
 
     return NextResponse.json(
-      { success: true, message: 'Form submitted successfully' },
+      { success: true, message: 'Your enquiry submitted successfully' },
       { status: 200 }
     );
 

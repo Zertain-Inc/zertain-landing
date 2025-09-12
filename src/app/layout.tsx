@@ -16,8 +16,36 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
+      <head>
+        {/* Head can remain clean - scripts are loaded via Script components below */}
+      </head>
       <body className="antialiased">
         <ErrorReporter />
+
+        {/* Google Analytics/Ads Scripts - Load in correct order */}
+        <Script
+          src="https://www.googletagmanager.com/gtag/js?id=AW-16972743037"
+          strategy="afterInteractive"
+        />
+        <Script id="google-ads-config" strategy="afterInteractive">
+          {`
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){dataLayer.push(arguments);}
+            gtag('js', new Date());
+            gtag('config', 'AW-16972743037');
+          `}
+        </Script>
+
+        {/* Conversion Tracking Script - runs after gtag is loaded */}
+        <Script id="conversion-tracking" strategy="afterInteractive">
+          {`
+            gtag('event', 'conversion', {
+              'send_to': 'AW-16972743037/1FSJCPPOgpAbEP2Cnp0_'
+            });
+          `}
+        </Script>
+
+        {/* Your existing route messenger script */}
         <Script
           src="https://slelguoygbfzlpylpxfs.supabase.co/storage/v1/object/public/scripts//route-messenger.js"
           strategy="afterInteractive"
@@ -28,6 +56,7 @@ export default function RootLayout({
           data-debug="true"
           data-custom-data='{"appName": "YourApp", "version": "1.0.0", "greeting": "hi"}'
         />
+
         {children}
         <VisualEditsMessenger />
       </body>
